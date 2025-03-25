@@ -1,4 +1,3 @@
-U29seWR7UVFRRzAwRF9PczFOVF9DNE4tVGFrM19VX0Y0UlFRUX0K
 Noogle Web Blog
 
 A aplicação web da Noogle, desenvolvida por Maria Sheb, está atualmente em desenvolvimento. O objetivo é criar um blog moderno, intuitivo e eficiente para seus usuários. Mesmo ainda em progresso, a aplicação já conta com funcionalidades essenciais e uma base sólida para futuras expansões.
