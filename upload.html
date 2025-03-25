@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload GIF</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .hidden { display: none; }
+    </style>
+</head>
+<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen">
+    <div class="w-full max-w-md p-6 bg-gray-800 rounded-lg shadow-lg text-center">
+        <h1 class="text-2xl font-bold mb-4">Upload Your GIF</h1>
+        
+        <div id="drop-zone" class="border-2 border-dashed border-gray-500 p-6 rounded-lg cursor-pointer transition hover:bg-gray-700">
+            <p class="text-gray-400">Drag & Drop a GIF here or Click to Browse</p>
+            <input type="file" id="fileInput" class="hidden" accept="image/gif">
+        </div>
+
+        <div id="preview" class="mt-4 hidden">
+            <img id="previewImage" class="rounded-lg w-full max-h-60 object-contain">
+            <button id="uploadBtn" class="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition">Upload</button>
+        </div>
+
+        <div id="progress-container" class="mt-4 hidden">
+            <div class="w-full bg-gray-700 rounded-full">
+                <div id="progress-bar" class="bg-blue-500 text-xs text-center p-1 leading-none rounded-full" style="width: 0%">0%</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('fileInput');
+        const preview = document.getElementById('preview');
+        const previewImage = document.getElementById('previewImage');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const progressContainer = document.getElementById('progress-container');
+        const progressBar = document.getElementById('progress-bar');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('bg-gray-700');
+        });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('bg-gray-700'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('bg-gray-700');
+            handleFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', () => handleFile(fileInput.files[0]));
+
+        async function checkMagicNumber(file) {
+            const buffer = await file.arrayBuffer();
+            const byteArray = new Uint8Array(buffer);
+            const gifSignature = [0x47, 0x49, 0x46];
+            return gifSignature.every((byte, index) => byteArray[index] === byte);
+        }
+
+        async function handleFile(file) {
+            if (file) {
+                const isGif = await checkMagicNumber(file);
+                if (isGif) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        previewImage.src = e.target.result;
+                        preview.classList.remove('hidden');
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    alert('Only valid GIF files are allowed!');
+                }
+            }
+        }
+
+        uploadBtn.addEventListener('click', () => {
+            const file = fileInput.files[0];
+            if (!file) return;
+            
+            const formData = new FormData();
+            formData.append('fileToUpload', file);
+            progressContainer.classList.remove('hidden');
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', 'upload.php', true);
+
+            xhr.upload.onprogress = (e) => {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    progressBar.style.width = percent + '%';
+                    progressBar.textContent = percent + '%';
+                }
+            };
+
+            xhr.onload = () => {
+                if (xhr.status === 200) {
+                    alert('Upload successful!');
+                } else {
+                    alert('Upload failed.');
+                }
+            };
+
+            xhr.send(formData);
+        });
+    </script>
+<script>
+        async function fetchJWT() {
+            const response = await fetch("token.php");
+            const data = await response.json();
+            localStorage.setItem("jwtToken", data.token);
+            return data.token;
+        }
+
+        async function verifyJWT(token) {
+            const response = await fetch("verify.php", {
+                method: "GET",
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+            const data = await response.json();
+
+            if (data.access === "granted") {
+                document.getElementById("upload-container").classList.remove("hidden");
+            } else {
+                document.getElementById("access-denied").classList.remove("hidden");
+                document.getElementById("userType").textContent = "visitor";
+            }
+        }
+
+        (async function () {
+            let token = localStorage.getItem("jwtToken");
+            if (!token) {
+                token = await fetchJWT();
+            }
+            await verifyJWT(token);
+        })();
+    </script>
+
+</body>
+</html>
