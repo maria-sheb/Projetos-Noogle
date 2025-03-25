@@ -3,7 +3,7 @@ require 'vendor/autoload.php';
 
 use Firebase\JWT\JWT;
 
-$secretKey = "FKQW4-Q1QMKA-DI7RP-MZ4Q1-WEPQ7-AOE16-12"; 
+$secretKey = "VERY-ULTRA-BLASTER-MEGA-SUPER-TOKEN!"; 
 
 $payload = [
     "type" => "visitor",
